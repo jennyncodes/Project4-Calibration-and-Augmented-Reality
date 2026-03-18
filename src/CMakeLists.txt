@@ -21,5 +21,5 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_SOURCE_DIR}/../bin)
 add_executable(calibration calibration.cpp)
 target_link_libraries(calibration ${OpenCV_LIBS})
 
-add_executable(features features.cpp ${SHARED_SOURCES})
-target_link_libraries(features ${OpenCV_LIBS})
+# add_executable(features features.cpp ${SHARED_SOURCES})
+# target_link_libraries(features ${OpenCV_LIBS})

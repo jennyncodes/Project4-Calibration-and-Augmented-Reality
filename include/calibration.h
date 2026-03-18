@@ -36,4 +36,3 @@ void drawHouse(cv::Mat& img, cv::Mat& camMat, cv::Mat& dist,
 
 #endif
 
-#endif
