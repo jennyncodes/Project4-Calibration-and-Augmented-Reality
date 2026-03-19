@@ -12,7 +12,7 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 
-// board dimensions (internal corners)
+// board dimensions
 const int COLS = 9;
 const int ROWS = 6;
 const cv::Size BOARD_SIZE(COLS, ROWS);
@@ -22,17 +22,20 @@ const cv::Size BOARD_SIZE(COLS, ROWS);
 // treats each square as 1x1 unit, origin at top-left internal corner
 std::vector<cv::Vec3f> makeWorldPoints();
 
-// draws XYZ coordinate axes on the board origin
-void drawAxes(cv::Mat& img, cv::Mat& camMat, cv::Mat& dist,
-              cv::Mat& rvec, cv::Mat& tvec);
+bool runCalibration(
+  const std::vector<std::vector<cv::Point2f>>& corner_list,
+  const std::vector<std::vector<cv::Vec3f>>&   point_list,
+  cv::Size imgSize,
+  cv::Mat& cameraMatrix,
+  cv::Mat& distCoeffs);
 
-// projects and connects the 4 outer corners of the board
-void drawBoardOutline(cv::Mat& img, cv::Mat& camMat, cv::Mat& dist,
-                      cv::Mat& rvec, cv::Mat& tvec);
+void writeIntrinsics(const std::string& filename,
+                     const cv::Mat& cameraMatrix,
+                     const cv::Mat& distCoeffs);
 
-// draws a virtual house object floating above the board
-void drawHouse(cv::Mat& img, cv::Mat& camMat, cv::Mat& dist,
-               cv::Mat& rvec, cv::Mat& tvec);
+bool loadIntrinsics(const std::string& filename,
+                    cv::Mat& cameraMatrix,
+                    cv::Mat& distCoeffs);
 
 #endif
 

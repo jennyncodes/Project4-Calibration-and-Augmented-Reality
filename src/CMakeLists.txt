@@ -17,8 +17,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY         ${CMAKE_SOURCE_DIR}/../bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/../bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_SOURCE_DIR}/../bin)
 
+# shared source files used by both executables
+set(SHARED_SOURCES
+    camera.cpp
+)
+
 # Each executable only needs its own .cpp
-add_executable(calibration calibration.cpp)
+add_executable(calibration calibration.cpp ${SHARED_SOURCES})
 target_link_libraries(calibration ${OpenCV_LIBS})
 
 # add_executable(features features.cpp ${SHARED_SOURCES})

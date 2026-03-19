@@ -15,7 +15,7 @@ detection.
 
 Double-click `build.bat` or run it from the terminal:
 ```
-build.bat
+.\build.bat
 ```
 
 Or manually:
@@ -30,13 +30,12 @@ cmake --build . --config Release
 
 ```
 cd build
-./calibration.exe    # main calibration + AR program
-./features.exe       # Harris corner detection
+.\bin\calibration.exe    # main calibration + AR program
 ```
 
 ## Controls (calibration.exe)
 - `s` — save current frame for calibration
-- `r` — run calibration (need at least 5 saved frames)
+- `c` — run calibration (need at least 5 saved frames)
 - `w` — write intrinsics to data/intrinsics.yml
 - `l` — load intrinsics from data/intrinsics.yml
 - `q` — quit
