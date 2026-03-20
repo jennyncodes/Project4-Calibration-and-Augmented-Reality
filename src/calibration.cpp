@@ -21,6 +21,7 @@ void showHelp() {
   std::cout << "  0 - show original\n";
   std::cout << "  1 - show corner detection\n";
   std::cout << "  2 - show Harris features\n";
+  std::cout << "  3 - show AR overlay \n";
   std::cout << "  q - quit\n";
   std::cout << "========================\n\n";
 }
@@ -51,15 +52,18 @@ int main() {
   cv::Mat cameraMatrix, distCoeffs;
   bool calibrated = false;
 
-  // display mode: 0=original, 1=corner detection, 2=harris
-  int display_mode = 1;
+  //pose declared here so display mode 3 can use them
+  cv::Mat rvec, tvec;
+  bool pose_valid = false;
 
-  // harris threshold — can tune this value
+  // display mode: 0=original, 1=corner detection, 2=harris, 3=ar 
+  int display_mode = 1;
   int harris_thresh = 150;
+  bool running = true;
 
   cv::Mat frame, grey;
 
-  while (true) {
+  while (running) {
     cap >> frame;
     if (frame.empty()) break;
 
@@ -93,18 +97,10 @@ int main() {
 
     // estimate board pose if we have intrinsics and a detected board
     if (calibrated && last_found) {
-      cv::Mat rvec, tvec;
-
-      // solvePnP finds the rotation and translation that maps the 3D world
-      // points onto the detected 2D image corners
-      bool ok = cv::solvePnP(point_set, last_corners,
-                             cameraMatrix, distCoeffs, rvec, tvec);
-
-      if (ok) {
-        // print pose so we can see how it changes as the board moves
-        std::cout << "\nrvec: " << rvec.t()
-                  << "\ntvec: " << tvec.t() << "\n";
-      }
+    pose_valid = cv::solvePnP(point_set, last_corners,
+                              cameraMatrix, distCoeffs, rvec, tvec);
+      if (pose_valid)
+        std::cout << "\ntvec: " << tvec.t() << "\n";
     }
 
      // build the display image based on current mode
@@ -135,29 +131,34 @@ int main() {
         cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 255, 255), 2);
       cv::putText(show, "threshold: " + std::to_string(harris_thresh),
         cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(180, 180, 180), 1);
-
-      // show heatmap in a second window
       cv::imshow("harris response", dst_scaled);
+
+    } else if (display_mode == 3) {
+      //show ar overlay if we have a valid pose
+      if (pose_valid) {
+        drawBoardOutline(show, cameraMatrix, distCoeffs, rvec, tvec);
+        drawAxes(show, cameraMatrix, distCoeffs, rvec, tvec);
+        drawHouse(show, cameraMatrix, distCoeffs, rvec, tvec);
+      } else {
+        cv::putText(show, "load intrinsics first (press 'l')",
+          cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 0, 255), 2);
+      }
     }
 
-    // status overlay
-    cv::putText(frame, found ? "board found" : "searching...",
-      cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8,
-      found ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 255), 2);
-    cv::putText(frame, "saved: " + std::to_string(corner_list.size()),
-      cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(255, 255, 0), 2);
+    cv::putText(show, "saved: " + std::to_string(corner_list.size()),
+      cv::Point(10, show.rows - 40), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(255, 255, 0), 1);
     if (calibrated)
-      cv::putText(frame, "calibrated!", cv::Point(10, 90),
-        cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 0), 2);
-    cv::putText(frame, "s=save  c=calibrate  w=write  q=quit",
-      cv::Point(10, frame.rows - 10), cv::FONT_HERSHEY_SIMPLEX, 0.45, cv::Scalar(180, 180, 180), 1);
+      cv::putText(show, "calibrated!", cv::Point(10, show.rows - 20),
+        cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 255, 0), 1);
 
-    cv::imshow("proj4 - calibration", frame);
+    cv::imshow("Result", show);
     char key = cv::waitKey(30);
 
     switch (key) {
       case 'q':
-        goto done;
+      std::cout << "\nquitting...\n";
+        running = false;
+        break;
       // save the last detected corners and world points
       case 's':
         if (!last_found) {
@@ -219,6 +220,11 @@ int main() {
         std::cout << "\nshowing Harris features\n";
         break;
 
+      case '3':
+        display_mode = 3;
+        std::cout << "\nshowing AR overlay\n";
+        break;
+
       // tune harris threshold on the fly
       case '+':
         harris_thresh = std::min(harris_thresh + 10, 255);
@@ -229,13 +235,9 @@ int main() {
         harris_thresh = std::max(harris_thresh - 10, 0);
         std::cout << "\nharris threshold: " << harris_thresh << "\n";
         break;
-    }
-    
-    
-    
+    }  
   }
 
-  done:
   cap.release();
   cv::destroyAllWindows();
   return 0;

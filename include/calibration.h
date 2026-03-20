@@ -39,5 +39,14 @@ bool loadIntrinsics(const std::string& filename,
 
 int detectAndDrawHarris(cv::Mat& display, cv::Mat& dst_norm, int thresh);
 
+void drawAxes(cv::Mat& img, cv::Mat& camMat, cv::Mat& dist,
+              cv::Mat& rvec, cv::Mat& tvec);
+
+void drawBoardOutline(cv::Mat& img, cv::Mat& camMat, cv::Mat& dist,
+                      cv::Mat& rvec, cv::Mat& tvec);
+
+void drawHouse(cv::Mat& img, cv::Mat& camMat, cv::Mat& dist,
+               cv::Mat& rvec, cv::Mat& tvec);
+
 #endif
 

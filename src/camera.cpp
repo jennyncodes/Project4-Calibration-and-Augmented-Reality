@@ -19,13 +19,8 @@ std::vector<cv::Vec3f> makeWorldPoints() {
   return pts;
 }
 
-/*
-  Initializes the camera matrix with focal lengths = 1 and principal
-  point at the image center, then lets calibrateCamera refine everything.
-  CALIB_FIX_ASPECT_RATIO assumes square pixels (fx = fy).
-  Prints the camera matrix and distortion before and after, plus the
-  reprojection error. Returns true if calibration succeeded.
-*/
+// Initializes the camera matrix with focal lengths = 1 and principal point at the image center, then refine everything.
+// Prints the camera matrix and distortion before and after, plus the reprojection error. Returns true if calibration succeeded.
 bool runCalibration(
   const std::vector<std::vector<cv::Point2f>>& corner_list,
   const std::vector<std::vector<cv::Vec3f>>&   point_list,

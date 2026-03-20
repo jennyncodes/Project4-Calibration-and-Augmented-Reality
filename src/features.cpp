@@ -10,11 +10,8 @@
 #include "calibration.h"
 
 
-/*
-  For each pixel where the normalized Harris response exceeds thresh,
-  draw a red circle on the display image.
-  Returns the number of corners found.
-*/
+// For each pixel where the normalized Harris response exceeds thresh, draw a red circle on the display image.
+// Returns the number of corners found.
 int detectAndDrawHarris(cv::Mat& display, cv::Mat& dst_norm, int thresh) {
   int count = 0;
   for (int r = 0; r < dst_norm.rows; r++) {
