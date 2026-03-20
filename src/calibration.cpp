@@ -17,6 +17,7 @@ void showHelp() {
   std::cout << "  s - save current frame for calibration\n";
   std::cout << "  c - run calibration (need at least 5 frames)\n";
   std::cout << "  w - write intrinsics to data/intrinsics.yml\n";
+  std::cout << "  l - load intrinsics from data/intrinsics.yml\n";
   std::cout << "  q - quit\n";
   std::cout << "========================\n\n";
 }
@@ -82,6 +83,23 @@ int main() {
       last_found = false;
     }
 
+    // estimate board pose if we have intrinsics and a detected board
+    if (calibrated && last_found) {
+      cv::Mat rvec, tvec;
+
+      // solvePnP finds the rotation and translation that maps the 3D world
+      // points onto the detected 2D image corners
+      bool ok = cv::solvePnP(point_set, last_corners,
+                             cameraMatrix, distCoeffs, rvec, tvec);
+
+      if (ok) {
+        // print pose so we can see how it changes as the board moves
+        // tvec[0] = left/right, tvec[1] = up/down, tvec[2] = distance
+        std::cout << "\nrvec: " << rvec.t()
+                  << "\ntvec: " << tvec.t() << "\n";
+      }
+    }
+
     // status overlay
     cv::putText(frame, found ? "board found" : "searching...",
       cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8,
@@ -137,7 +155,17 @@ int main() {
           writeIntrinsics("data/intrinsics.yml", cameraMatrix, distCoeffs);
         }
         break;
+
+      // load intrinsics from file skips having to recalibrate every run
+      case 'l':
+        calibrated = loadIntrinsics("data/intrinsics.yml",
+                                    cameraMatrix, distCoeffs);
+        if (calibrated)
+          std::cout << "camera matrix:\n" << cameraMatrix << "\n";
+        break;
     }
+    
+    
   }
 
   done:
