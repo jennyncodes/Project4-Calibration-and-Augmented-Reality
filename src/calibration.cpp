@@ -18,6 +18,9 @@ void showHelp() {
   std::cout << "  c - run calibration (need at least 5 frames)\n";
   std::cout << "  w - write intrinsics to data/intrinsics.yml\n";
   std::cout << "  l - load intrinsics from data/intrinsics.yml\n";
+  std::cout << "  0 - show original\n";
+  std::cout << "  1 - show corner detection\n";
+  std::cout << "  2 - show Harris features\n";
   std::cout << "  q - quit\n";
   std::cout << "========================\n\n";
 }
@@ -34,13 +37,12 @@ int main() {
   std::cout << "Camera opened successfully\n";
   showHelp();
 
-  // calibration data grows each time the user presses 's'
+  // calibration data 
   const std::vector<cv::Vec3f> point_set = makeWorldPoints();
   std::vector<std::vector<cv::Vec3f>>   point_list;
   std::vector<std::vector<cv::Point2f>> corner_list;
 
-  // keep track of the most recent successful detection
-  // so 's' always saves the last good frame even if the board disappears
+  // last successful detection
   std::vector<cv::Point2f> last_corners;
   cv::Mat last_frame;
   bool last_found = false;
@@ -48,6 +50,12 @@ int main() {
   // intrinsics filled after calibration
   cv::Mat cameraMatrix, distCoeffs;
   bool calibrated = false;
+
+  // display mode: 0=original, 1=corner detection, 2=harris
+  int display_mode = 1;
+
+  // harris threshold — can tune this value
+  int harris_thresh = 150;
 
   cv::Mat frame, grey;
 
@@ -94,10 +102,42 @@ int main() {
 
       if (ok) {
         // print pose so we can see how it changes as the board moves
-        // tvec[0] = left/right, tvec[1] = up/down, tvec[2] = distance
         std::cout << "\nrvec: " << rvec.t()
                   << "\ntvec: " << tvec.t() << "\n";
       }
+    }
+
+     // build the display image based on current mode
+    cv::Mat show = frame.clone();
+
+    if (display_mode == 1) {
+      // show corner detection overlay
+      if (found)
+        cv::drawChessboardCorners(show, BOARD_SIZE, corners, found);
+
+      cv::putText(show, found ? "board found" : "searching...",
+        cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8,
+        found ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 255), 2);
+
+    } else if (display_mode == 2) {
+      // show Harris corner features
+      cv::Mat grey_f, dst, dst_norm, dst_scaled;
+      grey.convertTo(grey_f, CV_32F);
+
+      // blockSize=2, apertureSize=3, k=0.04
+      cv::cornerHarris(grey_f, dst, 2, 3, 0.04);
+      cv::normalize(dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1);
+      cv::convertScaleAbs(dst_norm, dst_scaled);
+
+      int count = detectAndDrawHarris(show, dst_norm, harris_thresh);
+
+      cv::putText(show, "harris corners: " + std::to_string(count),
+        cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 255, 255), 2);
+      cv::putText(show, "threshold: " + std::to_string(harris_thresh),
+        cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(180, 180, 180), 1);
+
+      // show heatmap in a second window
+      cv::imshow("harris response", dst_scaled);
     }
 
     // status overlay
@@ -163,7 +203,34 @@ int main() {
         if (calibrated)
           std::cout << "camera matrix:\n" << cameraMatrix << "\n";
         break;
+
+      case '0':
+        display_mode = 0;
+        std::cout << "\nshowing original\n";
+        break;
+
+      case '1':
+        display_mode = 1;
+        std::cout << "\nshowing corner detection\n";
+        break;
+
+      case '2':
+        display_mode = 2;
+        std::cout << "\nshowing Harris features\n";
+        break;
+
+      // tune harris threshold on the fly
+      case '+':
+        harris_thresh = std::min(harris_thresh + 10, 255);
+        std::cout << "\nharris threshold: " << harris_thresh << "\n";
+        break;
+
+      case '-':
+        harris_thresh = std::max(harris_thresh - 10, 0);
+        std::cout << "\nharris threshold: " << harris_thresh << "\n";
+        break;
     }
+    
     
     
   }

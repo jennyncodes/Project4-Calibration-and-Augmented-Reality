@@ -20,6 +20,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_SOURCE_DIR}/../bin)
 # shared source files used by both executables
 set(SHARED_SOURCES
     camera.cpp
+    features.cpp
 )
 
 # Each executable only needs its own .cpp

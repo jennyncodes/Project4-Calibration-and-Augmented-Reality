@@ -37,5 +37,7 @@ bool loadIntrinsics(const std::string& filename,
                     cv::Mat& cameraMatrix,
                     cv::Mat& distCoeffs);
 
+int detectAndDrawHarris(cv::Mat& display, cv::Mat& dst_norm, int thresh);
+
 #endif
 
