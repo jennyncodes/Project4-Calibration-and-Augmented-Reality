@@ -22,6 +22,8 @@ set(SHARED_SOURCES
     camera.cpp
     features.cpp
     ar.cpp
+    photoar.cpp
+    target.cpp
 )
 
 # Each executable only needs its own .cpp

@@ -11,6 +11,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include <string>
 
 // board dimensions
 const int COLS = 9;
@@ -47,6 +48,24 @@ void drawBoardOutline(cv::Mat& img, cv::Mat& camMat, cv::Mat& dist,
 
 void drawHouse(cv::Mat& img, cv::Mat& camMat, cv::Mat& dist,
                cv::Mat& rvec, cv::Mat& tvec);
+              
+std::vector<cv::Point3f> photoWorldPoints(float w_cm, float h_cm);
+void onPhotoClick(int event, int x, int y, int, void* userdata);
+void drawPhotoClicks(cv::Mat& img, const std::vector<cv::Point2f>& clicks);
+bool runPhotoAR(cv::Mat& img,
+                const std::vector<cv::Point2f>& clicks,
+                float w_cm, float h_cm,
+                cv::Mat& camMat, cv::Mat& dist,
+                cv::Mat& rvec, cv::Mat& tvec);
+
+void drawMultiTarget(cv::Mat& show,
+                     bool pose_valid,
+                     cv::Mat& cameraMatrix, cv::Mat& distCoeffs,
+                     cv::Mat& rvec, cv::Mat& tvec,
+                     const std::vector<cv::Point2f>& photo_clicks,
+                     float photo_w_cm, float photo_h_cm,
+                     cv::Mat& photo_rvec, cv::Mat& photo_tvec,
+                     bool& photo_pose_valid);               
 
 #endif
 

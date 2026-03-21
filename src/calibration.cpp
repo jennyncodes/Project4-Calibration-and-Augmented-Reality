@@ -22,6 +22,9 @@ void showHelp() {
   std::cout << "  1 - show corner detection\n";
   std::cout << "  2 - show Harris features\n";
   std::cout << "  3 - show AR overlay \n";
+  std::cout << "  4 - show photo AR (click 4 corners of your photo)\n";
+  std::cout << "  5 - show multi-target AR (board + photo at once)\n";
+  std::cout << "  r - reset photo clicks (mode 4 only)\n";
   std::cout << "  q - quit\n";
   std::cout << "========================\n\n";
 }
@@ -52,14 +55,26 @@ int main() {
   cv::Mat cameraMatrix, distCoeffs;
   bool calibrated = false;
 
-  //pose declared here so display mode 3 can use them
+  //pose for chessboard in mode 3
   cv::Mat rvec, tvec;
   bool pose_valid = false;
+
+  // photo AR (mode 4) 
+  const float PHOTO_W_CM = 21.0f;
+  const float PHOTO_H_CM = 29.7f;
+  std::vector<cv::Point2f> photo_clicks;
+  cv::Mat photo_rvec, photo_tvec;
+  bool photo_pose_valid = false;
 
   // display mode: 0=original, 1=corner detection, 2=harris, 3=ar 
   int display_mode = 1;
   int harris_thresh = 150;
   bool running = true;
+
+  cv::namedWindow("Result", cv::WINDOW_AUTOSIZE);
+
+  // mouse callback for photo AR mode
+  cv::setMouseCallback("Result", onPhotoClick, &photo_clicks);
 
   cv::Mat frame, grey;
 
@@ -93,6 +108,7 @@ int main() {
     } else {
       std::cout << "\rno board detected   " << std::flush;
       last_found = false;
+      pose_valid = false;
     }
 
     // estimate board pose if we have intrinsics and a detected board
@@ -143,6 +159,25 @@ int main() {
         cv::putText(show, "load intrinsics first (press 'l')",
           cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 0, 255), 2);
       }
+    } else if (display_mode == 4) {
+      if (calibrated) {
+        photo_pose_valid = runPhotoAR(show, photo_clicks,
+                                      PHOTO_W_CM, PHOTO_H_CM,
+                                      cameraMatrix, distCoeffs,
+                                      photo_rvec, photo_tvec);
+      }
+      drawPhotoClicks(show, photo_clicks);
+      if ((int)photo_clicks.size() < 4) {
+        cv::putText(show, "click corner " + std::to_string(photo_clicks.size()+1) + " of 4",
+          cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.8, cv::Scalar(0, 255, 0), 2);
+        cv::putText(show, "order: top-left, top-right, bottom-right, bottom-left",
+          cv::Point(10, 60), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(180, 180, 180), 1);
+      }
+    } else if (display_mode == 5) {
+      drawMultiTarget(show, pose_valid,
+                      cameraMatrix, distCoeffs, rvec, tvec,
+                      photo_clicks, PHOTO_W_CM, PHOTO_H_CM,
+                      photo_rvec, photo_tvec, photo_pose_valid);
     }
 
     cv::putText(show, "saved: " + std::to_string(corner_list.size()),
@@ -224,8 +259,30 @@ int main() {
         display_mode = 3;
         std::cout << "\nshowing AR overlay\n";
         break;
+      
+      case '4':
+        display_mode = 4;
+        photo_clicks.clear();
+        photo_pose_valid = false;
+        std::cout << "\nphoto AR — click 4 corners of your photo\n";
+        std::cout << "order: top-left, top-right, bottom-right, bottom-left\n";
+        break;
+      
+      case '5':
+        display_mode = 5;
+        std::cout << "\nmulti-target AR\n";
+        std::cout << "point at the chessboard, and click 4 corners of the photo\n";
+        break;
 
-      // tune harris threshold on the fly
+      case 'r':
+        if (display_mode == 4) {
+          photo_clicks.clear();
+          photo_pose_valid = false;
+          std::cout << "\nreset clicks\n";
+        }
+        break;
+
+      // tune harris threshold
       case '+':
         harris_thresh = std::min(harris_thresh + 10, 255);
         std::cout << "\nharris threshold: " << harris_thresh << "\n";
